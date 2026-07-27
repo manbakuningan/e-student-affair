@@ -180,6 +180,19 @@ function roleLabel(role) { return ROLE_LABELS[role] || role; }
    Menambah modul baru cukup menambah entri di object ini.
    ============================================================ */
 const MODULES = {
+  siswa_data: {
+    label: 'Data Siswa', desc: 'Induk data siswa/santri seluruh sekolah (sumber untuk fitur Scan QR).',
+    sheet: 'Siswa', icon: 'fa-address-card', roles: ['admin'],
+    fields: [
+      { key:'nisn', label:'NISN', type:'text', required:true },
+      { key:'nama', label:'Nama Siswa', type:'text', required:true },
+      { key:'kelas', label:'Kelas', type:'text', required:true },
+      { key:'jenisKelamin', label:'Jenis Kelamin', type:'select', options:['Laki-laki','Perempuan'], required:true },
+      { key:'noHp', label:'No. HP', type:'text' },
+      { key:'alamat', label:'Alamat', type:'textarea' },
+      { key:'qrId', label:'Kode QR', type:'text', placeholder:'Kosongkan agar dibuat otomatis (SIS0001, dst)' }
+    ]
+  },
   bk_kasus: {
     label: 'Kasus BK', desc: 'Pencatatan kasus & bimbingan konseling siswa.',
     sheet: 'BK_Kasus', icon: 'fa-comments', roles: ['admin','guru_bk'], qrEnabled: true,
@@ -665,7 +678,7 @@ function deleteRecord(id) {
 
 /* ============================================================
    SCAN QR SISWA
-   Pola kode QR siswa: SIS001, SIS002, dst (di-generate dari sistem
+   Pola kode QR siswa: SIS0001, SIS0002, dst (di-generate dari sistem
    kartu siswa). Dipakai untuk mengisi otomatis NISN/Nama/Kelas pada
    form modul, dan sebagai jalan pintas aksi cepat sesuai peran user.
    ============================================================ */
@@ -683,11 +696,11 @@ function openQrScanner(onDecode) {
         <div id="qrReaderBox" class="rounded-xl overflow-hidden border border-gray-200 bg-black/5 min-h-[220px] flex items-center justify-center">
           <p class="text-xs text-gray-400"><i class="fas fa-circle-notch fa-spin mr-2"></i>Mengaktifkan kamera...</p>
         </div>
-        <p class="text-[11px] text-gray-500 mt-3 text-center">Arahkan kamera ke QR pada kartu siswa (pola SIS001, SIS002, dst).</p>
+        <p class="text-[11px] text-gray-500 mt-3 text-center">Arahkan kamera ke QR pada kartu siswa (pola SIS0001, SIS0002, dst).</p>
         <div class="mt-4 pt-4 border-t border-gray-100">
           <label class="block mb-1 text-xs font-bold text-gray-500 uppercase">Atau masukkan kode manual</label>
           <div class="flex gap-2">
-            <input type="text" id="qrManualCode" placeholder="cth: SIS001" class="flex-1 bg-gray-50 border border-gray-200 text-sm rounded-lg p-2.5" onkeydown="if(event.key==='Enter'){event.preventDefault();submitManualQr();}">
+            <input type="text" id="qrManualCode" placeholder="cth: SIS0001" class="flex-1 bg-gray-50 border border-gray-200 text-sm rounded-lg p-2.5" onkeydown="if(event.key==='Enter'){event.preventDefault();submitManualQr();}">
             <button type="button" onclick="submitManualQr()" class="px-4 bg-indigo-600 text-white rounded-lg text-xs font-bold">Cari</button>
           </div>
         </div>
@@ -737,7 +750,7 @@ function closeQrScanner() { stopQrScanner(); closeModal(); }
 
 function lookupStudentByQr(code, onFound) {
   if (!QR_CODE_PATTERN.test(code)) {
-    showAlert('error', 'Format kode QR tidak dikenali. Gunakan pola SIS001, SIS002, dst.');
+    showAlert('error', 'Format kode QR tidak dikenali. Gunakan pola SIS0001, SIS0002, dst.');
     return;
   }
   showLoading();
