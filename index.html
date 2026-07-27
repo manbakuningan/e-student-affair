@@ -139,7 +139,7 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'
 /* ============================================================
    KONEKSI BACKEND (Google Apps Script Web App)
    ============================================================ */
-const API_URL = 'GANTI_DENGAN_URL_WEB_APP_ANDA'; // hasil deploy Code.gs, diakhiri /exec
+const API_URL = 'https://script.google.com/macros/s/AKfycbz9FMYZJdbhPreicdD9mOrbuGBnXaysMNFbsZpQ4UxpUPeNdPQV7qFHKmQ3c985z2Afhg/exec'; // hasil deploy Code.gs, diakhiri /exec
 
 async function callGAS(fn, ...args) {
   const res = await fetch(API_URL, {
