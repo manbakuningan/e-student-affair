@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script>
 tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'] } } } };
@@ -82,7 +83,12 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'
         <button onclick="toggleSidebar()" class="mr-3 p-1.5 text-slate-500 hover:bg-slate-100 rounded-lg"><i class="fas fa-bars text-lg"></i></button>
         <h2 id="pageTitle" class="text-lg font-bold text-slate-800">Dashboard</h2>
       </div>
-      <span class="text-xs font-bold text-slate-500" id="headerDate"></span>
+      <div class="flex items-center gap-3">
+        <button onclick="openGlobalScan()" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-bold shadow-sm transition active:scale-95">
+          <i class="fas fa-qrcode"></i><span class="hidden sm:inline">Scan QR Siswa</span>
+        </button>
+        <span class="text-xs font-bold text-slate-500 hidden md:inline" id="headerDate"></span>
+      </div>
     </header>
 
     <div id="mainContentArea" class="flex-1 overflow-y-auto p-4 md:p-6 pb-24">
@@ -102,7 +108,7 @@ tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'
               <h3 id="modTitle" class="font-bold text-sm text-gray-800"></h3>
               <p id="modDesc" class="text-xs text-gray-500"></p>
             </div>
-            <div class="flex items-center gap-2 flex-wrap justify-end">
+            <div id="modToolbarExtra" class="flex items-center gap-2 flex-wrap justify-end">
               <button onclick="refreshModule()" class="bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm hover:bg-gray-50"><i class="fas fa-sync-alt"></i></button>
               <button onclick="openRecordModal()" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm hover:bg-indigo-700"><i class="fas fa-plus mr-1"></i> Tambah</button>
             </div>
@@ -176,7 +182,7 @@ function roleLabel(role) { return ROLE_LABELS[role] || role; }
 const MODULES = {
   bk_kasus: {
     label: 'Kasus BK', desc: 'Pencatatan kasus & bimbingan konseling siswa.',
-    sheet: 'BK_Kasus', icon: 'fa-comments', roles: ['admin','guru_bk'],
+    sheet: 'BK_Kasus', icon: 'fa-comments', roles: ['admin','guru_bk'], qrEnabled: true,
     fields: [
       { key:'tanggal', label:'Tanggal', type:'date', required:true },
       { key:'nisn', label:'NISN', type:'text', required:true },
@@ -191,7 +197,7 @@ const MODULES = {
   },
   perizinan: {
     label: 'Perizinan Siswa', desc: 'Izin keluar, sakit, dan pulang lebih awal.',
-    sheet: 'Perizinan', icon: 'fa-door-open', roles: ['admin','kepala_keamanan','guru_bk'],
+    sheet: 'Perizinan', icon: 'fa-door-open', roles: ['admin','kepala_keamanan','guru_bk'], qrEnabled: true,
     fields: [
       { key:'tanggal', label:'Tanggal', type:'date', required:true },
       { key:'nisn', label:'NISN', type:'text', required:true },
@@ -207,7 +213,7 @@ const MODULES = {
   },
   keamanan: {
     label: 'Keamanan & Pelanggaran', desc: 'Pencatatan pelanggaran tata tertib & poin siswa.',
-    sheet: 'Pelanggaran', icon: 'fa-shield-halved', roles: ['admin','kepala_keamanan'],
+    sheet: 'Pelanggaran', icon: 'fa-shield-halved', roles: ['admin','kepala_keamanan'], qrEnabled: true,
     fields: [
       { key:'tanggal', label:'Tanggal', type:'date', required:true },
       { key:'nisn', label:'NISN', type:'text', required:true },
@@ -232,7 +238,7 @@ const MODULES = {
   },
   osis_anggota: {
     label: 'Anggota OSIS', desc: 'Struktur kepengurusan OSIS.',
-    sheet: 'OSIS_Anggota', icon: 'fa-users', roles: ['admin','penjab_osis'],
+    sheet: 'OSIS_Anggota', icon: 'fa-users', roles: ['admin','penjab_osis'], qrEnabled: true,
     fields: [
       { key:'nisn', label:'NISN', type:'text', required:true },
       { key:'namaSiswa', label:'Nama Siswa', type:'text', required:true },
@@ -253,7 +259,7 @@ const MODULES = {
   },
   ekskul_anggota: {
     label: 'Anggota Ekstrakulikuler', desc: 'Daftar siswa peserta ekstrakulikuler.',
-    sheet: 'Ekskul_Anggota', icon: 'fa-user-check', roles: ['admin','penjab_ekskul'],
+    sheet: 'Ekskul_Anggota', icon: 'fa-user-check', roles: ['admin','penjab_ekskul'], qrEnabled: true,
     fields: [
       { key:'ekskul', label:'Nama Ekstrakulikuler', type:'text', required:true },
       { key:'nisn', label:'NISN', type:'text', required:true },
@@ -274,7 +280,7 @@ const MODULES = {
   },
   perpus_peminjaman: {
     label: 'Peminjaman Buku', desc: 'Transaksi peminjaman & pengembalian buku.',
-    sheet: 'Perpus_Peminjaman', icon: 'fa-right-left', roles: ['admin','pustakawan'],
+    sheet: 'Perpus_Peminjaman', icon: 'fa-right-left', roles: ['admin','pustakawan'], qrEnabled: true,
     fields: [
       { key:'buku', label:'Judul Buku', type:'text', required:true },
       { key:'nisn', label:'NISN', type:'text', required:true },
@@ -461,6 +467,26 @@ function openModule(key) {
   showView('view-module');
   renderModuleHead();
   loadModuleData();
+  renderModuleQrButton();
+}
+
+function renderModuleQrButton() {
+  const mod = MODULES[currentModuleKey];
+  const existing = document.getElementById('modQrBtn');
+  if (existing) existing.remove();
+  if (!mod.qrEnabled) return;
+  const btn = document.createElement('button');
+  btn.id = 'modQrBtn';
+  btn.className = 'bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm hover:bg-emerald-700';
+  btn.innerHTML = '<i class="fas fa-qrcode mr-1"></i> Scan QR';
+  btn.onclick = scanForModule;
+  document.getElementById('modToolbarExtra').prepend(btn);
+}
+
+function scanForModule() {
+  openQrScanner(code => {
+    lookupStudentByQr(code, siswa => openRecordModal(null, siswa));
+  });
 }
 
 function refreshModule() { moduleCache[currentModuleKey] = null; loadModuleData(); }
@@ -523,13 +549,13 @@ function renderModuleRows() {
 function escapeHtml(str) { return str.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 /* ---------- Modal add/edit (auto-generated dari config field) ---------- */
-function openRecordModal(record = null) {
+function openRecordModal(record = null, prefill = null) {
   const mod = MODULES[currentModuleKey];
   const isEdit = record !== null;
   const inputClass = "w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 mb-4";
 
   let fieldsHtml = mod.fields.map(f => {
-    const val = isEdit ? (record[f.key] ?? '') : '';
+    const val = isEdit ? (record[f.key] ?? '') : (prefill && prefill[f.key] !== undefined ? prefill[f.key] : '');
     let inputHtml = '';
     if (f.type === 'textarea') {
       inputHtml = `<textarea name="${f.key}" rows="2" class="${inputClass}" ${f.required?'required':''} placeholder="${f.placeholder||''}">${val}</textarea>`;
@@ -551,6 +577,7 @@ function openRecordModal(record = null) {
         <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
       </div>
       <div class="p-6 max-h-[75vh] overflow-y-auto">
+        ${(!isEdit && prefill) ? `<div class="mb-4 p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-xs text-emerald-700 font-semibold flex items-center gap-2"><i class="fas fa-qrcode"></i> Data siswa terisi otomatis dari hasil scan QR</div>` : ''}
         <form onsubmit="saveRecord(event, ${isEdit})">
           ${fieldsHtml}
           ${isEdit ? `<input type="hidden" name="id" value="${record.id}">` : ''}
@@ -603,6 +630,130 @@ function deleteRecord(id) {
       else showAlert('error', res.message);
     }).catch(err => { hideLoading(); showAlert('error', 'Gagal koneksi: ' + err.message); });
   });
+}
+
+/* ============================================================
+   SCAN QR SISWA
+   Pola kode QR siswa: SIS001, SIS002, dst (di-generate dari sistem
+   kartu siswa). Dipakai untuk mengisi otomatis NISN/Nama/Kelas pada
+   form modul, dan sebagai jalan pintas aksi cepat sesuai peran user.
+   ============================================================ */
+const QR_CODE_PATTERN = /^SIS\d+$/i;
+
+function openQrScanner(onDecode) {
+  window._qrOnDecode = onDecode;
+  showModal(`
+    <div class="bg-white rounded-2xl shadow-2xl overflow-hidden max-w-md w-full mx-auto">
+      <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+        <h3 class="text-lg font-bold text-gray-800"><i class="fas fa-qrcode mr-2 text-emerald-600"></i>Pindai QR Siswa</h3>
+        <button onclick="closeQrScanner()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="p-6">
+        <div id="qrReaderBox" class="rounded-xl overflow-hidden border border-gray-200 bg-black/5 min-h-[220px] flex items-center justify-center">
+          <p class="text-xs text-gray-400"><i class="fas fa-circle-notch fa-spin mr-2"></i>Mengaktifkan kamera...</p>
+        </div>
+        <p class="text-[11px] text-gray-500 mt-3 text-center">Arahkan kamera ke QR pada kartu siswa (pola SIS001, SIS002, dst).</p>
+        <div class="mt-4 pt-4 border-t border-gray-100">
+          <label class="block mb-1 text-xs font-bold text-gray-500 uppercase">Atau masukkan kode manual</label>
+          <div class="flex gap-2">
+            <input type="text" id="qrManualCode" placeholder="cth: SIS001" class="flex-1 bg-gray-50 border border-gray-200 text-sm rounded-lg p-2.5" onkeydown="if(event.key==='Enter'){event.preventDefault();submitManualQr();}">
+            <button type="button" onclick="submitManualQr()" class="px-4 bg-indigo-600 text-white rounded-lg text-xs font-bold">Cari</button>
+          </div>
+        </div>
+      </div>
+    </div>`);
+
+  try {
+    window._qrScanner = new Html5Qrcode('qrReaderBox');
+    window._qrScanner.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: 220 },
+      (decodedText) => handleQrDecoded(decodedText),
+      () => { /* abaikan frame gagal decode */ }
+    ).catch(() => {
+      const box = document.getElementById('qrReaderBox');
+      if (box) box.innerHTML = '<p class="text-xs text-red-500 text-center px-4">Kamera tidak dapat diakses. Gunakan input kode manual di bawah.</p>';
+    });
+  } catch (err) {
+    const box = document.getElementById('qrReaderBox');
+    if (box) box.innerHTML = '<p class="text-xs text-red-500 text-center px-4">Kamera tidak tersedia di perangkat ini. Gunakan input kode manual di bawah.</p>';
+  }
+}
+
+function submitManualQr() {
+  const el = document.getElementById('qrManualCode');
+  const val = el ? el.value.trim() : '';
+  if (val) handleQrDecoded(val);
+}
+
+function handleQrDecoded(code) {
+  const cb = window._qrOnDecode;
+  stopQrScanner();
+  closeModal();
+  if (cb) cb(String(code).trim());
+}
+
+function stopQrScanner() {
+  if (window._qrScanner) {
+    try {
+      window._qrScanner.stop().then(() => { try { window._qrScanner.clear(); } catch(e){} }).catch(()=>{});
+    } catch (e) { /* noop */ }
+    window._qrScanner = null;
+  }
+}
+
+function closeQrScanner() { stopQrScanner(); closeModal(); }
+
+function lookupStudentByQr(code, onFound) {
+  if (!QR_CODE_PATTERN.test(code)) {
+    showAlert('error', 'Format kode QR tidak dikenali. Gunakan pola SIS001, SIS002, dst.');
+    return;
+  }
+  showLoading();
+  callGAS('getSiswaByQrId', code.toUpperCase()).then(res => {
+    hideLoading();
+    if (!res.success) { showAlert('error', res.message || 'Data siswa tidak ditemukan.'); return; }
+    onFound(res.data);
+  }).catch(err => { hideLoading(); showAlert('error', 'Gagal koneksi: ' + err.message); });
+}
+
+/* Scan QR global di header — cocok untuk semua peran, menampilkan
+   pilihan aksi cepat sesuai modul yang boleh diakses peran user. */
+function openGlobalScan() {
+  openQrScanner(code => {
+    lookupStudentByQr(code, siswa => showStudentQuickActions(siswa));
+  });
+}
+
+function showStudentQuickActions(siswa) {
+  const role = currentUser.role;
+  const modsForRole = Object.entries(MODULES).filter(([k, m]) => m.qrEnabled && (role === 'admin' || m.roles.includes(role)));
+
+  const actionsHtml = modsForRole.length ? modsForRole.map(([key, mod]) => `
+    <button onclick='useQuickAction("${key}", ${JSON.stringify(siswa)})' class="w-full text-left p-3 bg-gray-50 hover:bg-indigo-50 rounded-xl border border-gray-100 flex items-center gap-3 mb-2 transition">
+      <div class="text-indigo-500 bg-indigo-100 p-2 rounded-lg"><i class="fas ${mod.icon}"></i></div>
+      <div><p class="text-sm font-bold text-gray-800">${mod.label}</p><p class="text-[10px] text-gray-500">Tambah data baru untuk siswa ini</p></div>
+    </button>`).join('') : '<p class="text-xs text-gray-400 text-center py-4">Tidak ada modul yang mendukung QR untuk peran Anda.</p>';
+
+  showModal(`
+    <div class="bg-white rounded-2xl shadow-2xl overflow-hidden max-w-md w-full mx-auto">
+      <div class="p-6 border-b border-gray-100 bg-gray-50/50">
+        <h3 class="text-lg font-bold text-gray-800 mb-1"><i class="fas fa-id-card mr-2 text-indigo-600"></i>Data Siswa Ditemukan</h3>
+        <p class="text-sm text-gray-700 font-semibold">${escapeHtml(siswa.namaSiswa || '-')}</p>
+        <p class="text-xs text-gray-500">NISN: ${escapeHtml(siswa.nisn || '-')} · Kelas: ${escapeHtml(siswa.kelas || '-')}</p>
+      </div>
+      <div class="p-6">
+        <p class="text-[10px] font-bold text-gray-400 uppercase mb-2">Pilih Tindakan</p>
+        ${actionsHtml}
+        <button onclick="closeModal()" class="w-full mt-2 px-5 py-2.5 rounded-xl text-gray-600 font-medium hover:bg-gray-100">Batal</button>
+      </div>
+    </div>`);
+}
+
+function useQuickAction(moduleKey, siswa) {
+  closeModal();
+  openModule(moduleKey);
+  setTimeout(() => openRecordModal(null, siswa), 200);
 }
 
 /* ============================================================
