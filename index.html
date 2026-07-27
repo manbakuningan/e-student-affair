@@ -485,8 +485,39 @@ function renderModuleQrButton() {
 
 function scanForModule() {
   openQrScanner(code => {
-    lookupStudentByQr(code, siswa => openRecordModal(null, siswa));
+    lookupStudentByQr(code, siswa => showStudentDetailForModule(siswa));
   });
+}
+
+function showStudentDetailForModule(siswa) {
+  const mod = MODULES[currentModuleKey];
+  const displayLabels = {
+    nisn: 'NISN', namaSiswa: 'Nama Siswa', kelas: 'Kelas',
+    jenisKelamin: 'Jenis Kelamin', noHp: 'No. HP', alamat: 'Alamat', qrId: 'Kode QR'
+  };
+  const hiddenKeys = ['id', 'nama'];
+  const detailRows = Object.keys(displayLabels)
+    .filter(k => siswa[k] !== undefined && !hiddenKeys.includes(k))
+    .map(k => `
+      <div class="flex justify-between gap-3 py-1.5 border-b border-gray-50 last:border-0">
+        <span class="text-[11px] text-gray-500 font-semibold">${displayLabels[k]}</span>
+        <span class="text-xs text-gray-800 text-right">${escapeHtml(String(siswa[k] || '-'))}</span>
+      </div>`).join('');
+
+  showModal(`
+    <div class="bg-white rounded-2xl shadow-2xl overflow-hidden max-w-md w-full mx-auto">
+      <div class="p-6 border-b border-gray-100 bg-gray-50/50">
+        <h3 class="text-lg font-bold text-gray-800 mb-1"><i class="fas fa-id-card mr-2 text-indigo-600"></i>Data Siswa Ditemukan</h3>
+        <p class="text-sm text-gray-700 font-semibold">${escapeHtml(siswa.namaSiswa || '-')}</p>
+      </div>
+      <div class="p-6">
+        <div class="bg-gray-50/60 border border-gray-100 rounded-xl p-3 mb-4">${detailRows}</div>
+        <div class="flex justify-end gap-3">
+          <button onclick="closeModal()" class="px-5 py-2.5 rounded-xl text-gray-600 font-medium hover:bg-gray-100">Batal</button>
+          <button onclick='closeModal(); openRecordModal(null, ${JSON.stringify(siswa)});' class="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700"><i class="fas fa-arrow-right mr-1"></i> Isi ke Form ${mod.label}</button>
+        </div>
+      </div>
+    </div>`);
 }
 
 function refreshModule() { moduleCache[currentModuleKey] = null; loadModuleData(); }
@@ -735,14 +766,29 @@ function showStudentQuickActions(siswa) {
       <div><p class="text-sm font-bold text-gray-800">${mod.label}</p><p class="text-[10px] text-gray-500">Tambah data baru untuk siswa ini</p></div>
     </button>`).join('') : '<p class="text-xs text-gray-400 text-center py-4">Tidak ada modul yang mendukung QR untuk peran Anda.</p>';
 
+  // Tabel ringkas seluruh data siswa dari sheet Siswa (dinamis,
+  // mengikuti field apa pun yang tersedia pada hasil lookup).
+  const displayLabels = {
+    nisn: 'NISN', namaSiswa: 'Nama Siswa', kelas: 'Kelas',
+    jenisKelamin: 'Jenis Kelamin', noHp: 'No. HP', alamat: 'Alamat', qrId: 'Kode QR'
+  };
+  const hiddenKeys = ['id', 'nama'];
+  const detailRows = Object.keys(displayLabels)
+    .filter(k => siswa[k] !== undefined && !hiddenKeys.includes(k))
+    .map(k => `
+      <div class="flex justify-between gap-3 py-1.5 border-b border-gray-50 last:border-0">
+        <span class="text-[11px] text-gray-500 font-semibold">${displayLabels[k]}</span>
+        <span class="text-xs text-gray-800 text-right">${escapeHtml(String(siswa[k] || '-'))}</span>
+      </div>`).join('');
+
   showModal(`
     <div class="bg-white rounded-2xl shadow-2xl overflow-hidden max-w-md w-full mx-auto">
       <div class="p-6 border-b border-gray-100 bg-gray-50/50">
         <h3 class="text-lg font-bold text-gray-800 mb-1"><i class="fas fa-id-card mr-2 text-indigo-600"></i>Data Siswa Ditemukan</h3>
         <p class="text-sm text-gray-700 font-semibold">${escapeHtml(siswa.namaSiswa || '-')}</p>
-        <p class="text-xs text-gray-500">NISN: ${escapeHtml(siswa.nisn || '-')} · Kelas: ${escapeHtml(siswa.kelas || '-')}</p>
       </div>
-      <div class="p-6">
+      <div class="p-6 max-h-[75vh] overflow-y-auto">
+        <div class="bg-gray-50/60 border border-gray-100 rounded-xl p-3 mb-4">${detailRows}</div>
         <p class="text-[10px] font-bold text-gray-400 uppercase mb-2">Pilih Tindakan</p>
         ${actionsHtml}
         <button onclick="closeModal()" class="w-full mt-2 px-5 py-2.5 rounded-xl text-gray-600 font-medium hover:bg-gray-100">Batal</button>
