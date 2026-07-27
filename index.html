@@ -154,13 +154,29 @@ async function callGAS(fn, ...args) {
 }
 
 /* ============================================================
+   PERAN (ROLE) — daftar peran resmi & label tampilannya.
+   Menambah peran baru cukup menambah entri di sini,
+   lalu mencantumkan key-nya pada field "roles" modul terkait.
+   ============================================================ */
+const ROLE_LABELS = {
+  admin:            'Administrator',
+  guru_bk:          'Guru BK',
+  kepala_keamanan:  'Kepala Keamanan',
+  penjab_osis:      'Penanggung Jawab OSIS',
+  penjab_ekskul:    'Penanggung Jawab Ekskul',
+  pustakawan:       'Pustakawan',
+  penjab_ppdb:      'Penanggung Jawab PPDB'
+};
+function roleLabel(role) { return ROLE_LABELS[role] || role; }
+
+/* ============================================================
    KONFIGURASI MODUL — setiap modul kesiswaan didefinisikan di sini.
    Menambah modul baru cukup menambah entri di object ini.
    ============================================================ */
 const MODULES = {
   bk_kasus: {
     label: 'Kasus BK', desc: 'Pencatatan kasus & bimbingan konseling siswa.',
-    sheet: 'BK_Kasus', icon: 'fa-comments', roles: ['admin','bk'],
+    sheet: 'BK_Kasus', icon: 'fa-comments', roles: ['admin','guru_bk'],
     fields: [
       { key:'tanggal', label:'Tanggal', type:'date', required:true },
       { key:'nisn', label:'NISN', type:'text', required:true },
@@ -175,7 +191,7 @@ const MODULES = {
   },
   perizinan: {
     label: 'Perizinan Siswa', desc: 'Izin keluar, sakit, dan pulang lebih awal.',
-    sheet: 'Perizinan', icon: 'fa-door-open', roles: ['admin','keamanan'],
+    sheet: 'Perizinan', icon: 'fa-door-open', roles: ['admin','kepala_keamanan','guru_bk'],
     fields: [
       { key:'tanggal', label:'Tanggal', type:'date', required:true },
       { key:'nisn', label:'NISN', type:'text', required:true },
@@ -191,7 +207,7 @@ const MODULES = {
   },
   keamanan: {
     label: 'Keamanan & Pelanggaran', desc: 'Pencatatan pelanggaran tata tertib & poin siswa.',
-    sheet: 'Pelanggaran', icon: 'fa-shield-halved', roles: ['admin','keamanan'],
+    sheet: 'Pelanggaran', icon: 'fa-shield-halved', roles: ['admin','kepala_keamanan'],
     fields: [
       { key:'tanggal', label:'Tanggal', type:'date', required:true },
       { key:'nisn', label:'NISN', type:'text', required:true },
@@ -205,7 +221,7 @@ const MODULES = {
   },
   osis_kegiatan: {
     label: 'Kegiatan OSIS', desc: 'Agenda dan kegiatan OSIS sekolah.',
-    sheet: 'OSIS_Kegiatan', icon: 'fa-flag', roles: ['admin','osis'],
+    sheet: 'OSIS_Kegiatan', icon: 'fa-flag', roles: ['admin','penjab_osis'],
     fields: [
       { key:'tanggal', label:'Tanggal', type:'date', required:true },
       { key:'namaKegiatan', label:'Nama Kegiatan', type:'text', required:true },
@@ -216,7 +232,7 @@ const MODULES = {
   },
   osis_anggota: {
     label: 'Anggota OSIS', desc: 'Struktur kepengurusan OSIS.',
-    sheet: 'OSIS_Anggota', icon: 'fa-users', roles: ['admin','osis'],
+    sheet: 'OSIS_Anggota', icon: 'fa-users', roles: ['admin','penjab_osis'],
     fields: [
       { key:'nisn', label:'NISN', type:'text', required:true },
       { key:'namaSiswa', label:'Nama Siswa', type:'text', required:true },
@@ -227,7 +243,7 @@ const MODULES = {
   },
   ekskul: {
     label: 'Ekstrakulikuler', desc: 'Daftar kegiatan ekstrakulikuler sekolah.',
-    sheet: 'Ekskul', icon: 'fa-futbol', roles: ['admin','ekskul'],
+    sheet: 'Ekskul', icon: 'fa-futbol', roles: ['admin','penjab_ekskul'],
     fields: [
       { key:'namaEkskul', label:'Nama Ekstrakulikuler', type:'text', required:true },
       { key:'pembina', label:'Pembina', type:'text', required:true },
@@ -237,7 +253,7 @@ const MODULES = {
   },
   ekskul_anggota: {
     label: 'Anggota Ekstrakulikuler', desc: 'Daftar siswa peserta ekstrakulikuler.',
-    sheet: 'Ekskul_Anggota', icon: 'fa-user-check', roles: ['admin','ekskul'],
+    sheet: 'Ekskul_Anggota', icon: 'fa-user-check', roles: ['admin','penjab_ekskul'],
     fields: [
       { key:'ekskul', label:'Nama Ekstrakulikuler', type:'text', required:true },
       { key:'nisn', label:'NISN', type:'text', required:true },
@@ -247,7 +263,7 @@ const MODULES = {
   },
   perpus_buku: {
     label: 'Katalog Buku', desc: 'Data koleksi buku perpustakaan.',
-    sheet: 'Perpus_Buku', icon: 'fa-book', roles: ['admin','perpus'],
+    sheet: 'Perpus_Buku', icon: 'fa-book', roles: ['admin','pustakawan'],
     fields: [
       { key:'judul', label:'Judul Buku', type:'text', required:true },
       { key:'pengarang', label:'Pengarang', type:'text' },
@@ -258,7 +274,7 @@ const MODULES = {
   },
   perpus_peminjaman: {
     label: 'Peminjaman Buku', desc: 'Transaksi peminjaman & pengembalian buku.',
-    sheet: 'Perpus_Peminjaman', icon: 'fa-right-left', roles: ['admin','perpus'],
+    sheet: 'Perpus_Peminjaman', icon: 'fa-right-left', roles: ['admin','pustakawan'],
     fields: [
       { key:'buku', label:'Judul Buku', type:'text', required:true },
       { key:'nisn', label:'NISN', type:'text', required:true },
@@ -267,6 +283,21 @@ const MODULES = {
       { key:'tanggalPinjam', label:'Tanggal Pinjam', type:'date', required:true },
       { key:'tanggalKembali', label:'Tanggal Kembali', type:'date' },
       { key:'status', label:'Status', type:'select', options:['Dipinjam','Dikembalikan','Terlambat'], required:true }
+    ]
+  },
+  ppdb_pendaftar: {
+    label: 'PPDB — Pendaftar', desc: 'Data calon siswa baru & status seleksi PPDB.',
+    sheet: 'PPDB_Pendaftar', icon: 'fa-user-plus', roles: ['admin','penjab_ppdb'],
+    fields: [
+      { key:'tanggalDaftar', label:'Tanggal Daftar', type:'date', required:true },
+      { key:'namaCalon', label:'Nama Calon Siswa', type:'text', required:true },
+      { key:'asalSekolah', label:'Asal Sekolah', type:'text' },
+      { key:'namaOrangTua', label:'Nama Orang Tua/Wali', type:'text' },
+      { key:'noHp', label:'No. HP', type:'text' },
+      { key:'jalurPendaftaran', label:'Jalur Pendaftaran', type:'select', options:['Reguler','Beasiswa','Prestasi','Mutasi'], required:true },
+      { key:'jenjang', label:'Jenjang', type:'select', options:['MTs (Kelas 1-3)','SMA IT (Kelas 4-6)'], required:true },
+      { key:'statusSeleksi', label:'Status Seleksi', type:'select', options:['Mendaftar','Tes','Lulus','Tidak Lulus','Daftar Ulang'], required:true },
+      { key:'petugas', label:'Petugas PPDB', type:'text' }
     ]
   }
 };
@@ -327,7 +358,7 @@ function enterDashboard() {
   if (window.innerWidth < 768) document.getElementById('sidebar').classList.add('-translate-x-full');
 
   document.getElementById('navUserName').textContent = currentUser.nama || currentUser.username;
-  document.getElementById('navUserRole').textContent = String(currentUser.role || '').toUpperCase();
+  document.getElementById('navUserRole').textContent = roleLabel(currentUser.role).toUpperCase();
   document.getElementById('navUserInitial').textContent = (currentUser.nama || currentUser.username).charAt(0).toUpperCase();
 
   buildSidebar();
@@ -392,6 +423,10 @@ function loadDashboard() {
   const visibleModules = Object.entries(MODULES).filter(([k,m]) => role === 'admin' || m.roles.includes(role));
 
   callGAS('getDashboardStats').then(stats => {
+    if (visibleModules.length === 0) {
+      grid.innerHTML = '<div class="col-span-full text-center py-10 text-gray-400">Tidak ada modul yang tersedia untuk peran Anda.</div>';
+      return;
+    }
     grid.innerHTML = visibleModules.map(([key, mod]) => `
       <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 relative overflow-hidden group cursor-pointer" onclick="openModule('${key}')">
         <div class="absolute right-0 top-0 w-16 h-16 bg-indigo-50 rounded-bl-full -mr-2 -mt-2 group-hover:scale-110 transition-transform"></div>
@@ -410,9 +445,14 @@ function loadDashboard() {
    MODUL — GENERIC LIST / CRUD
    ============================================================ */
 function openModule(key) {
+  // Guard: pastikan role user berhak mengakses modul ini
+  const mod = MODULES[key];
+  if (!mod || (currentUser.role !== 'admin' && !mod.roles.includes(currentUser.role))) {
+    showAlert('error', 'Anda tidak memiliki akses ke modul ini.');
+    return;
+  }
   currentModuleKey = key;
   modSearchTerm = '';
-  const mod = MODULES[key];
   setActiveMenu(mod.label);
   document.getElementById('pageTitle').textContent = mod.label;
   document.getElementById('modTitle').textContent = mod.label;
