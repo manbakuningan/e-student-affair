@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0">
+<title>E-SISWA — Sistem Kesiswaan</title>
+<meta name="theme-color" content="#1a1967">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script>
+tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'] } } } };
+</script>
+<style>
+  ::-webkit-scrollbar{width:6px;height:6px} ::-webkit-scrollbar-thumb{background:#c7c7c7;border-radius:10px}
+  .animate-fade-in{animation:fadeIn .35s ease} @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .view-section{display:none} .view-section.active{display:block}
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  body{-webkit-text-size-adjust:100%}
+  input,select,textarea{font-size:15px}
+</style>
+</head>
+<body class="bg-slate-900 font-sans antialiased text-slate-800 overflow-x-hidden">
+
+<!-- ============ LOGIN ============ -->
+<div id="loginPage" class="relative min-h-screen flex items-center justify-center p-4 overflow-hidden bg-slate-950">
+  <div class="absolute inset-0 z-0">
+    <div class="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950"></div>
+    <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-700 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-pulse"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-cyan-700 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-pulse" style="animation-delay:2s"></div>
+  </div>
+  <div class="relative z-10 w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/5 animate-fade-in">
+    <div class="bg-gradient-to-r from-blue-800 to-indigo-800 p-8 text-white text-center">
+      <div class="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-3 border border-white/20">
+        <i class="fas fa-user-graduate text-2xl"></i>
+      </div>
+      <h1 class="text-2xl font-bold">E-SISWA</h1>
+      <p class="text-blue-100 text-xs mt-1 uppercase tracking-widest">Sistem Kesiswaan Sekolah</p>
+    </div>
+    <div class="p-8">
+      <form onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <label class="block mb-1 text-xs font-bold text-gray-500 uppercase">Username</label>
+          <input type="text" id="username" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-400 outline-none">
+        </div>
+        <div>
+          <label class="block mb-1 text-xs font-bold text-gray-500 uppercase">Password</label>
+          <input type="password" id="password" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-400 outline-none">
+        </div>
+        <button type="submit" class="w-full py-3 bg-indigo-700 hover:bg-indigo-800 text-white font-bold rounded-xl shadow-lg transition transform active:scale-95">Masuk</button>
+      </form>
+      <div id="loginError" class="hidden mt-4 p-3 bg-red-50 border border-red-100 rounded-xl text-xs text-red-600 font-semibold text-center"></div>
+      <p class="text-center text-[10px] text-gray-400 mt-6">Default admin: <b>admin</b> / <b>admin123</b></p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DASHBOARD SHELL ============ -->
+<div id="dashboardContainer" class="hidden flex h-screen overflow-hidden bg-[#F3F4F6]">
+  <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 text-white transform -translate-x-full md:translate-x-0 transition-all duration-300 flex flex-col h-full shadow-2xl" style="background:#1a1967">
+    <div class="h-16 flex items-center px-5 border-b border-white/10">
+      <div class="w-8 h-8 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-lg flex items-center justify-center mr-3"><i class="fas fa-user-graduate text-sm"></i></div>
+      <div><h1 class="font-bold text-sm">E-SISWA</h1><p class="text-[9px] text-indigo-200 uppercase tracking-wider">Kesiswaan</p></div>
+    </div>
+    <div class="p-4">
+      <div class="flex items-center gap-3 p-3 bg-black/20 rounded-xl border border-white/10">
+        <div id="navUserInitial" class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center font-bold text-sm">U</div>
+        <div><p id="navUserName" class="font-semibold text-xs truncate max-w-[130px]">User</p><span id="navUserRole" class="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-indigo-800 text-indigo-100">Role</span></div>
+      </div>
+    </div>
+    <nav id="sidebarMenu" class="flex-1 overflow-y-auto px-3 space-y-1 pb-4 text-sm"></nav>
+    <div class="p-4 border-t border-white/10">
+      <button onclick="logout()" class="flex items-center gap-3 text-red-300 hover:text-white hover:bg-red-500/20 w-full p-2.5 rounded-lg transition text-xs font-medium"><i class="fas fa-sign-out-alt w-5 text-center"></i> Keluar</button>
+    </div>
+  </aside>
+  <div id="mobileOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/60 z-30 hidden"></div>
+
+  <main class="flex-1 flex flex-col md:ml-64 h-screen overflow-hidden">
+    <header class="h-16 bg-white/80 backdrop-blur-xl sticky top-0 z-20 flex items-center justify-between px-5 border-b border-slate-200/70 shadow-sm">
+      <div class="flex items-center">
+        <button onclick="toggleSidebar()" class="mr-3 p-1.5 text-slate-500 hover:bg-slate-100 rounded-lg"><i class="fas fa-bars text-lg"></i></button>
+        <h2 id="pageTitle" class="text-lg font-bold text-slate-800">Dashboard</h2>
+      </div>
+      <span class="text-xs font-bold text-slate-500" id="headerDate"></span>
+    </header>
+
+    <div id="mainContentArea" class="flex-1 overflow-y-auto p-4 md:p-6 pb-24">
+
+      <!-- DASHBOARD -->
+      <div id="view-dashboard" class="view-section animate-fade-in">
+        <h2 class="text-2xl font-bold text-gray-800 mb-1">Ringkasan Kesiswaan</h2>
+        <p class="text-sm text-gray-500 mb-6">Ikhtisar seluruh modul kesiswaan sekolah.</p>
+        <div id="dashboardStatsGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4"></div>
+      </div>
+
+      <!-- GENERIC MODULE VIEW (dirender dinamis) -->
+      <div id="view-module" class="view-section animate-fade-in">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div class="p-4 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-3 bg-gray-50/40">
+            <div>
+              <h3 id="modTitle" class="font-bold text-sm text-gray-800"></h3>
+              <p id="modDesc" class="text-xs text-gray-500"></p>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap justify-end">
+              <button onclick="refreshModule()" class="bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm hover:bg-gray-50"><i class="fas fa-sync-alt"></i></button>
+              <button onclick="openRecordModal()" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm hover:bg-indigo-700"><i class="fas fa-plus mr-1"></i> Tambah</button>
+            </div>
+          </div>
+          <div class="p-4 bg-white border-b border-gray-100 flex justify-between items-center gap-3">
+            <div class="relative w-full md:w-72">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fas fa-search text-gray-400 text-xs"></i></div>
+              <input type="text" id="modSearch" oninput="onModSearch(this.value)" class="bg-gray-50 border border-gray-200 text-gray-900 text-xs rounded-lg block w-full pl-10 p-2.5" placeholder="Cari data...">
+            </div>
+            <span id="modInfo" class="text-xs text-gray-500 whitespace-nowrap">0 data</span>
+          </div>
+          <div class="table-wrap">
+            <table class="w-full text-left">
+              <thead class="bg-gray-50 text-gray-500 text-[10px] uppercase font-semibold" id="modThead"></thead>
+              <tbody id="modTbody" class="divide-y divide-gray-50 bg-white text-xs"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div id="loadingOverlay" class="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-50 hidden flex items-center justify-center flex-col">
+  <div class="p-5 bg-white rounded-2xl shadow-2xl flex flex-col items-center">
+    <div class="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-3"></div>
+    <p class="text-slate-800 text-xs font-bold">Memproses...</p>
+  </div>
+</div>
+<div id="modalContainer"></div>
+
+<script>
+/* ============================================================
+   KONEKSI BACKEND (Google Apps Script Web App)
+   ============================================================ */
+const API_URL = 'GANTI_DENGAN_URL_WEB_APP_ANDA'; // hasil deploy Code.gs, diakhiri /exec
+
+async function callGAS(fn, ...args) {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ fn, args })
+  });
+  if (!res.ok) throw new Error('Network error: ' + res.status);
+  const json = await res.json();
+  if (json.error) throw new Error(json.error);
+  return json.result;
+}
+
+/* ============================================================
+   KONFIGURASI MODUL — setiap modul kesiswaan didefinisikan di sini.
+   Menambah modul baru cukup menambah entri di object ini.
+   ============================================================ */
+const MODULES = {
+  bk_kasus: {
+    label: 'Kasus BK', desc: 'Pencatatan kasus & bimbingan konseling siswa.',
+    sheet: 'BK_Kasus', icon: 'fa-comments', roles: ['admin','bk'],
+    fields: [
+      { key:'tanggal', label:'Tanggal', type:'date', required:true },
+      { key:'nisn', label:'NISN', type:'text', required:true },
+      { key:'namaSiswa', label:'Nama Siswa', type:'text', required:true },
+      { key:'kelas', label:'Kelas', type:'text', required:true },
+      { key:'kategori', label:'Kategori', type:'select', options:['Akademik','Pribadi','Sosial','Karir','Disiplin'], required:true },
+      { key:'deskripsi', label:'Deskripsi Kasus', type:'textarea', required:true },
+      { key:'tindakLanjut', label:'Tindak Lanjut', type:'textarea' },
+      { key:'status', label:'Status', type:'select', options:['Proses','Selesai','Dipantau'], required:true },
+      { key:'petugas', label:'Guru BK', type:'text' }
+    ]
+  },
+  perizinan: {
+    label: 'Perizinan Siswa', desc: 'Izin keluar, sakit, dan pulang lebih awal.',
+    sheet: 'Perizinan', icon: 'fa-door-open', roles: ['admin','keamanan'],
+    fields: [
+      { key:'tanggal', label:'Tanggal', type:'date', required:true },
+      { key:'nisn', label:'NISN', type:'text', required:true },
+      { key:'namaSiswa', label:'Nama Siswa', type:'text', required:true },
+      { key:'kelas', label:'Kelas', type:'text', required:true },
+      { key:'jenis', label:'Jenis Izin', type:'select', options:['Sakit','Izin Keluar','Pulang Lebih Awal','Dispensasi'], required:true },
+      { key:'alasan', label:'Alasan', type:'textarea', required:true },
+      { key:'jamKeluar', label:'Jam Keluar', type:'time' },
+      { key:'jamKembali', label:'Jam Kembali', type:'time' },
+      { key:'status', label:'Status', type:'select', options:['Menunggu','Disetujui','Ditolak'], required:true },
+      { key:'petugas', label:'Petugas', type:'text' }
+    ]
+  },
+  keamanan: {
+    label: 'Keamanan & Pelanggaran', desc: 'Pencatatan pelanggaran tata tertib & poin siswa.',
+    sheet: 'Pelanggaran', icon: 'fa-shield-halved', roles: ['admin','keamanan'],
+    fields: [
+      { key:'tanggal', label:'Tanggal', type:'date', required:true },
+      { key:'nisn', label:'NISN', type:'text', required:true },
+      { key:'namaSiswa', label:'Nama Siswa', type:'text', required:true },
+      { key:'kelas', label:'Kelas', type:'text', required:true },
+      { key:'jenisPelanggaran', label:'Jenis Pelanggaran', type:'text', required:true },
+      { key:'poin', label:'Poin', type:'number', required:true },
+      { key:'keterangan', label:'Keterangan', type:'textarea' },
+      { key:'petugas', label:'Petugas Keamanan', type:'text' }
+    ]
+  },
+  osis_kegiatan: {
+    label: 'Kegiatan OSIS', desc: 'Agenda dan kegiatan OSIS sekolah.',
+    sheet: 'OSIS_Kegiatan', icon: 'fa-flag', roles: ['admin','osis'],
+    fields: [
+      { key:'tanggal', label:'Tanggal', type:'date', required:true },
+      { key:'namaKegiatan', label:'Nama Kegiatan', type:'text', required:true },
+      { key:'deskripsi', label:'Deskripsi', type:'textarea' },
+      { key:'penanggungJawab', label:'Penanggung Jawab', type:'text' },
+      { key:'status', label:'Status', type:'select', options:['Rencana','Berjalan','Selesai','Batal'], required:true }
+    ]
+  },
+  osis_anggota: {
+    label: 'Anggota OSIS', desc: 'Struktur kepengurusan OSIS.',
+    sheet: 'OSIS_Anggota', icon: 'fa-users', roles: ['admin','osis'],
+    fields: [
+      { key:'nisn', label:'NISN', type:'text', required:true },
+      { key:'namaSiswa', label:'Nama Siswa', type:'text', required:true },
+      { key:'kelas', label:'Kelas', type:'text', required:true },
+      { key:'jabatan', label:'Jabatan', type:'text', required:true },
+      { key:'periode', label:'Periode', type:'text', required:true }
+    ]
+  },
+  ekskul: {
+    label: 'Ekstrakulikuler', desc: 'Daftar kegiatan ekstrakulikuler sekolah.',
+    sheet: 'Ekskul', icon: 'fa-futbol', roles: ['admin','ekskul'],
+    fields: [
+      { key:'namaEkskul', label:'Nama Ekstrakulikuler', type:'text', required:true },
+      { key:'pembina', label:'Pembina', type:'text', required:true },
+      { key:'jadwal', label:'Jadwal', type:'text', placeholder:'cth: Jumat, 15.00' },
+      { key:'deskripsi', label:'Deskripsi', type:'textarea' }
+    ]
+  },
+  ekskul_anggota: {
+    label: 'Anggota Ekstrakulikuler', desc: 'Daftar siswa peserta ekstrakulikuler.',
+    sheet: 'Ekskul_Anggota', icon: 'fa-user-check', roles: ['admin','ekskul'],
+    fields: [
+      { key:'ekskul', label:'Nama Ekstrakulikuler', type:'text', required:true },
+      { key:'nisn', label:'NISN', type:'text', required:true },
+      { key:'namaSiswa', label:'Nama Siswa', type:'text', required:true },
+      { key:'kelas', label:'Kelas', type:'text', required:true }
+    ]
+  },
+  perpus_buku: {
+    label: 'Katalog Buku', desc: 'Data koleksi buku perpustakaan.',
+    sheet: 'Perpus_Buku', icon: 'fa-book', roles: ['admin','perpus'],
+    fields: [
+      { key:'judul', label:'Judul Buku', type:'text', required:true },
+      { key:'pengarang', label:'Pengarang', type:'text' },
+      { key:'penerbit', label:'Penerbit', type:'text' },
+      { key:'kategori', label:'Kategori', type:'text' },
+      { key:'stok', label:'Stok', type:'number', required:true }
+    ]
+  },
+  perpus_peminjaman: {
+    label: 'Peminjaman Buku', desc: 'Transaksi peminjaman & pengembalian buku.',
+    sheet: 'Perpus_Peminjaman', icon: 'fa-right-left', roles: ['admin','perpus'],
+    fields: [
+      { key:'buku', label:'Judul Buku', type:'text', required:true },
+      { key:'nisn', label:'NISN', type:'text', required:true },
+      { key:'namaSiswa', label:'Nama Peminjam', type:'text', required:true },
+      { key:'kelas', label:'Kelas', type:'text' },
+      { key:'tanggalPinjam', label:'Tanggal Pinjam', type:'date', required:true },
+      { key:'tanggalKembali', label:'Tanggal Kembali', type:'date' },
+      { key:'status', label:'Status', type:'select', options:['Dipinjam','Dikembalikan','Terlambat'], required:true }
+    ]
+  }
+};
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let currentUser = null;
+let currentModuleKey = null;
+let moduleCache = {}; // { key: [records] }
+let modSearchTerm = '';
+
+document.getElementById('headerDate').textContent = new Date().toLocaleDateString('id-ID', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+/* ============================================================
+   AUTH
+   ============================================================ */
+function checkSession() {
+  const s = localStorage.getItem('esiswaSession');
+  if (!s) return;
+  try {
+    const data = JSON.parse(s);
+    if (data && data.success) { currentUser = data; enterDashboard(); }
+  } catch(e) { localStorage.removeItem('esiswaSession'); }
+}
+
+function handleLogin(e) {
+  e.preventDefault();
+  showLoading();
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+  callGAS('login', username, password).then(res => {
+    hideLoading();
+    if (res.success) {
+      currentUser = res;
+      localStorage.setItem('esiswaSession', JSON.stringify(res));
+      enterDashboard();
+    } else {
+      const el = document.getElementById('loginError');
+      el.textContent = res.message || 'Login gagal';
+      el.classList.remove('hidden');
+    }
+  }).catch(err => { hideLoading(); showAlert('error', 'Gagal koneksi: ' + err.message); });
+}
+
+function logout() {
+  localStorage.removeItem('esiswaSession');
+  currentUser = null;
+  document.getElementById('dashboardContainer').classList.add('hidden');
+  document.getElementById('loginPage').classList.remove('hidden');
+  document.getElementById('username').value = '';
+  document.getElementById('password').value = '';
+}
+
+function enterDashboard() {
+  document.getElementById('loginPage').classList.add('hidden');
+  document.getElementById('dashboardContainer').classList.remove('hidden');
+  if (window.innerWidth < 768) document.getElementById('sidebar').classList.add('-translate-x-full');
+
+  document.getElementById('navUserName').textContent = currentUser.nama || currentUser.username;
+  document.getElementById('navUserRole').textContent = String(currentUser.role || '').toUpperCase();
+  document.getElementById('navUserInitial').textContent = (currentUser.nama || currentUser.username).charAt(0).toUpperCase();
+
+  buildSidebar();
+  loadDashboard();
+}
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
+function buildSidebar() {
+  const role = currentUser.role;
+  const menu = document.getElementById('sidebarMenu');
+  const item = (label, icon, onclick, active=false) => `
+    <a data-name="${label}" onclick="${onclick}" class="flex items-center space-x-3 px-4 py-3 rounded-xl transition-all cursor-pointer text-xs font-medium ${active?'bg-indigo-600 text-white shadow-lg':'text-indigo-100/70 hover:bg-white/10 hover:text-white'}">
+      <i class="fas ${icon} w-5 text-center"></i><span>${label}</span>
+    </a>`;
+  let html = item('Dashboard','fa-house','loadDashboard()', true);
+  Object.entries(MODULES).forEach(([key, mod]) => {
+    if (role === 'admin' || mod.roles.includes(role)) {
+      html += item(mod.label, mod.icon, `openModule('${key}')`);
+    }
+  });
+  menu.innerHTML = html;
+}
+
+function setActiveMenu(label) {
+  document.querySelectorAll('#sidebarMenu a').forEach(a => {
+    const active = a.getAttribute('data-name') === label;
+    a.className = `flex items-center space-x-3 px-4 py-3 rounded-xl transition-all cursor-pointer text-xs font-medium ${active?'bg-indigo-600 text-white shadow-lg':'text-indigo-100/70 hover:bg-white/10 hover:text-white'}`;
+  });
+}
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('mobileOverlay');
+  if (window.innerWidth < 768) {
+    if (sidebar.classList.contains('-translate-x-full')) {
+      sidebar.classList.remove('-translate-x-full'); overlay.classList.remove('hidden');
+    } else {
+      sidebar.classList.add('-translate-x-full'); overlay.classList.add('hidden');
+    }
+  }
+}
+
+function showView(id) {
+  document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (window.innerWidth < 768) document.getElementById('sidebar').classList.add('-translate-x-full');
+}
+
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
+function loadDashboard() {
+  setActiveMenu('Dashboard');
+  document.getElementById('pageTitle').textContent = 'Dashboard';
+  showView('view-dashboard');
+  const grid = document.getElementById('dashboardStatsGrid');
+  grid.innerHTML = '<div class="col-span-full text-center py-10 text-gray-400"><i class="fas fa-circle-notch fa-spin mr-2"></i>Memuat statistik...</div>';
+
+  const role = currentUser.role;
+  const visibleModules = Object.entries(MODULES).filter(([k,m]) => role === 'admin' || m.roles.includes(role));
+
+  callGAS('getDashboardStats').then(stats => {
+    grid.innerHTML = visibleModules.map(([key, mod]) => `
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 relative overflow-hidden group cursor-pointer" onclick="openModule('${key}')">
+        <div class="absolute right-0 top-0 w-16 h-16 bg-indigo-50 rounded-bl-full -mr-2 -mt-2 group-hover:scale-110 transition-transform"></div>
+        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest relative z-10">${mod.label}</p>
+        <div class="flex items-center justify-between mt-2 relative z-10">
+          <h3 class="text-2xl font-bold text-gray-800">${stats[mod.sheet] ?? 0}</h3>
+          <div class="text-indigo-500 bg-indigo-50 p-2 rounded-lg"><i class="fas ${mod.icon}"></i></div>
+        </div>
+      </div>`).join('');
+  }).catch(err => {
+    grid.innerHTML = `<div class="col-span-full text-center py-10 text-red-400">Gagal memuat statistik: ${err.message}</div>`;
+  });
+}
+
+/* ============================================================
+   MODUL — GENERIC LIST / CRUD
+   ============================================================ */
+function openModule(key) {
+  currentModuleKey = key;
+  modSearchTerm = '';
+  const mod = MODULES[key];
+  setActiveMenu(mod.label);
+  document.getElementById('pageTitle').textContent = mod.label;
+  document.getElementById('modTitle').textContent = mod.label;
+  document.getElementById('modDesc').textContent = mod.desc;
+  document.getElementById('modSearch').value = '';
+  showView('view-module');
+  renderModuleHead();
+  loadModuleData();
+}
+
+function refreshModule() { moduleCache[currentModuleKey] = null; loadModuleData(); }
+
+function renderModuleHead() {
+  const mod = MODULES[currentModuleKey];
+  const thead = document.getElementById('modThead');
+  let html = '<tr><th class="p-3 text-center w-10">No</th>';
+  mod.fields.forEach(f => html += `<th class="p-3">${f.label}</th>`);
+  html += '<th class="p-3 text-center w-24">Aksi</th></tr>';
+  thead.innerHTML = html;
+}
+
+function loadModuleData() {
+  const tbody = document.getElementById('modTbody');
+  const mod = MODULES[currentModuleKey];
+  tbody.innerHTML = `<tr><td colspan="${mod.fields.length+2}" class="p-8 text-center text-gray-400"><i class="fas fa-circle-notch fa-spin mr-2"></i>Memuat data...</td></tr>`;
+
+  if (moduleCache[currentModuleKey]) { renderModuleRows(); return; }
+
+  callGAS('getList', mod.sheet).then(res => {
+    if (!res.success) { tbody.innerHTML = `<tr><td colspan="100%" class="p-4 text-center text-red-500">${res.message}</td></tr>`; return; }
+    moduleCache[currentModuleKey] = res.data;
+    renderModuleRows();
+  }).catch(err => { tbody.innerHTML = `<tr><td colspan="100%" class="p-4 text-center text-red-500">Gagal koneksi: ${err.message}</td></tr>`; });
+}
+
+function onModSearch(val) { modSearchTerm = val.toLowerCase(); renderModuleRows(); }
+
+function renderModuleRows() {
+  const mod = MODULES[currentModuleKey];
+  const tbody = document.getElementById('modTbody');
+  let data = moduleCache[currentModuleKey] || [];
+  if (modSearchTerm) {
+    data = data.filter(row => Object.values(row).some(v => String(v).toLowerCase().includes(modSearchTerm)));
+  }
+  document.getElementById('modInfo').textContent = data.length + ' data';
+
+  if (data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${mod.fields.length+2}" class="p-8 text-center text-gray-400">Tidak ada data.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = data.map((row, i) => {
+    let tds = `<td class="p-3 text-center text-gray-400">${i+1}</td>`;
+    mod.fields.forEach(f => {
+      let val = row[f.key] ?? '-';
+      if (f.type === 'textarea' && val && String(val).length > 40) val = String(val).slice(0,40) + '…';
+      tds += `<td class="p-3 text-gray-700">${escapeHtml(String(val))}</td>`;
+    });
+    tds += `<td class="p-3 text-center">
+      <div class="flex justify-center gap-2">
+        <button onclick='openRecordModal(${JSON.stringify(row).replace(/'/g,"&apos;")})' class="p-2 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-100" title="Edit"><i class="fas fa-edit"></i></button>
+        <button onclick="deleteRecord('${row.id}')" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100" title="Hapus"><i class="fas fa-trash"></i></button>
+      </div></td>`;
+    return `<tr class="hover:bg-gray-50 transition">${tds}</tr>`;
+  }).join('');
+}
+
+function escapeHtml(str) { return str.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ---------- Modal add/edit (auto-generated dari config field) ---------- */
+function openRecordModal(record = null) {
+  const mod = MODULES[currentModuleKey];
+  const isEdit = record !== null;
+  const inputClass = "w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 mb-4";
+
+  let fieldsHtml = mod.fields.map(f => {
+    const val = isEdit ? (record[f.key] ?? '') : '';
+    let inputHtml = '';
+    if (f.type === 'textarea') {
+      inputHtml = `<textarea name="${f.key}" rows="2" class="${inputClass}" ${f.required?'required':''} placeholder="${f.placeholder||''}">${val}</textarea>`;
+    } else if (f.type === 'select') {
+      inputHtml = `<select name="${f.key}" class="${inputClass}" ${f.required?'required':''}>
+        <option value="">-- Pilih --</option>
+        ${f.options.map(o => `<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}
+      </select>`;
+    } else {
+      inputHtml = `<input type="${f.type}" name="${f.key}" value="${val}" class="${inputClass}" ${f.required?'required':''} placeholder="${f.placeholder||''}">`;
+    }
+    return `<label class="block mb-1 text-xs font-bold text-gray-500 uppercase">${f.label}</label>${inputHtml}`;
+  }).join('');
+
+  showModal(`
+    <div class="bg-white rounded-2xl shadow-2xl overflow-hidden max-w-lg w-full mx-auto">
+      <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+        <h3 class="text-lg font-bold text-gray-800">${isEdit?'Edit':'Tambah'} ${mod.label}</h3>
+        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="p-6 max-h-[75vh] overflow-y-auto">
+        <form onsubmit="saveRecord(event, ${isEdit})">
+          ${fieldsHtml}
+          ${isEdit ? `<input type="hidden" name="id" value="${record.id}">` : ''}
+          <div class="flex justify-end gap-3 pt-2 border-t border-gray-100 mt-2">
+            <button type="button" onclick="closeModal()" class="px-5 py-2.5 rounded-xl text-gray-600 font-medium hover:bg-gray-100">Batal</button>
+            <button type="submit" class="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700">Simpan</button>
+          </div>
+        </form>
+      </div>
+    </div>`);
+}
+
+function saveRecord(e, isEdit) {
+  e.preventDefault();
+  const mod = MODULES[currentModuleKey];
+  const fd = new FormData(e.target);
+  const data = {};
+  mod.fields.forEach(f => data[f.key] = fd.get(f.key) || '');
+
+  showLoading();
+  const promise = isEdit
+    ? callGAS('updateRecord', mod.sheet, fd.get('id'), data)
+    : callGAS('addRecord', mod.sheet, data);
+
+  promise.then(res => {
+    hideLoading();
+    if (res.success) {
+      closeModal();
+      moduleCache[currentModuleKey] = null;
+      loadModuleData();
+      showAlert('success', isEdit ? 'Data berhasil diperbarui' : 'Data berhasil ditambahkan');
+    } else {
+      showAlert('error', res.message || 'Gagal menyimpan data');
+    }
+  }).catch(err => { hideLoading(); showAlert('error', 'Gagal koneksi: ' + err.message); });
+}
+
+function deleteRecord(id) {
+  const mod = MODULES[currentModuleKey];
+  Swal.fire({
+    title: 'Hapus data ini?', text: 'Tindakan ini tidak dapat dibatalkan.', icon: 'warning',
+    showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#6b7280',
+    confirmButtonText: 'Ya, Hapus', cancelButtonText: 'Batal'
+  }).then(r => {
+    if (!r.isConfirmed) return;
+    showLoading();
+    callGAS('deleteRecord', mod.sheet, id).then(res => {
+      hideLoading();
+      if (res.success) { moduleCache[currentModuleKey] = null; loadModuleData(); showAlert('success','Data dihapus'); }
+      else showAlert('error', res.message);
+    }).catch(err => { hideLoading(); showAlert('error', 'Gagal koneksi: ' + err.message); });
+  });
+}
+
+/* ============================================================
+   UI HELPERS
+   ============================================================ */
+function showLoading() { document.getElementById('loadingOverlay').classList.remove('hidden'); }
+function hideLoading() { document.getElementById('loadingOverlay').classList.add('hidden'); }
+function showModal(content) {
+  document.getElementById('modalContainer').innerHTML = `
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onclick="closeModal()"></div>
+      <div class="relative w-full max-w-lg animate-fade-in">${content}</div>
+    </div>`;
+}
+function closeModal() { document.getElementById('modalContainer').innerHTML = ''; }
+function showAlert(type, message) {
+  const bg = type === 'success' ? 'bg-green-600' : 'bg-red-600';
+  const div = document.createElement('div');
+  div.className = `fixed top-6 right-6 ${bg} text-white px-6 py-4 rounded-xl shadow-2xl z-[80] flex items-center font-medium animate-fade-in`;
+  div.innerHTML = `<i class="fas fa-${type==='success'?'check-circle':'exclamation-circle'} mr-3 text-xl"></i> ${message}`;
+  document.body.appendChild(div);
+  setTimeout(() => { div.style.opacity='0'; setTimeout(()=>div.remove(),300); }, 3000);
+}
+
+checkSession();
+</script>
+</body>
+</html>
